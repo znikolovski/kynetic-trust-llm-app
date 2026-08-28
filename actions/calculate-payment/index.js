@@ -2,6 +2,8 @@
 // resolve the mortgage product referenced in a request. Payment figures are
 // computed locally from the input args, not read from this fixture.
 // TODO: Replace MOCK_DATA with a real API call — see the TODO block below.
+const ALLOWED_TERMS = [15, 20, 30];
+
 const MOCK_DATA = [
     {
         name: 'Fixed-Rate Mortgage',
@@ -74,7 +76,7 @@ module.exports = async ({ home_value, down_payment, rate, term } = {}) => {
     if (typeof home_value !== 'number' || !Number.isFinite(home_value) || home_value <= 0) missing.push('home_value');
     if (typeof down_payment !== 'number' || !Number.isFinite(down_payment)) missing.push('down_payment');
     if (typeof rate !== 'number' || !Number.isFinite(rate)) missing.push('rate');
-    if (typeof term !== 'number' || !Number.isFinite(term) || term <= 0) missing.push('term');
+    if (typeof term !== 'number' || !Number.isInteger(term) || !ALLOWED_TERMS.includes(term)) missing.push('term');
 
     if (missing.length > 0) {
         return {

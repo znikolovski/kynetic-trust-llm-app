@@ -44,4 +44,14 @@ describe('calculate_payment handler', () => {
         expect(out.structuredContent.estimated_monthly_payment).toBeCloseTo(1200, 0);
         expect(out.structuredContent.total_interest).toBeCloseTo(0, 0);
     });
+
+    test('accepts only supported numeric terms', async () => {
+        const stringTerm = await handler({ home_value: 450000, down_payment: 20, rate: 6.2, term: '30' });
+        const unsupportedTerm = await handler({ home_value: 450000, down_payment: 20, rate: 6.2, term: 25 });
+
+        expect(stringTerm.content[0].text).toMatch(/term/i);
+        expect(unsupportedTerm.content[0].text).toMatch(/term/i);
+        expect(stringTerm.structuredContent).toEqual({});
+        expect(unsupportedTerm.structuredContent).toEqual({});
+    });
 });
