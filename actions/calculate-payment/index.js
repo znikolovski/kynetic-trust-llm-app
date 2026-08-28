@@ -71,12 +71,14 @@ const MOCK_DATA = [
     }
 ];
 
-module.exports = async ({ home_value, down_payment, rate, term } = {}) => {
+module.exports = async ({ home_value, down_payment, deposit, rate, term } = {}) => {
+    const effectiveDownPayment = down_payment ?? deposit;
+    const numericTerm = typeof term === 'string' ? Number(term) : term;
     const missing = [];
     if (typeof home_value !== 'number' || !Number.isFinite(home_value) || home_value <= 0) missing.push('home_value');
-    if (typeof down_payment !== 'number' || !Number.isFinite(down_payment)) missing.push('down_payment');
+    if (typeof effectiveDownPayment !== 'number' || !Number.isFinite(effectiveDownPayment)) missing.push('deposit');
     if (typeof rate !== 'number' || !Number.isFinite(rate)) missing.push('rate');
-    if (typeof term !== 'number' || !Number.isInteger(term) || !ALLOWED_TERMS.includes(term)) missing.push('term');
+    if (!Number.isInteger(numericTerm) || !ALLOWED_TERMS.includes(numericTerm)) missing.push('term');
 
     if (missing.length > 0) {
         return {
@@ -85,16 +87,16 @@ module.exports = async ({ home_value, down_payment, rate, term } = {}) => {
         };
     }
 
-    if (down_payment < 3.5) {
+    if (effectiveDownPayment < 3.5) {
         return {
             content: [{ type: 'text', text: 'The down payment must be at least 3.5% of the home value.' }],
             structuredContent: {}
         };
     }
 
-    const principal = home_value - (home_value * (down_payment / 100));
+    const principal = home_value - (home_value * (effectiveDownPayment / 100));
     const monthlyRate = rate / 100 / 12;
-    const numPayments = term * 12;
+    const numPayments = numericTerm * 12;
 
     let monthly;
     if (monthlyRate === 0) {
@@ -110,7 +112,7 @@ module.exports = async ({ home_value, down_payment, rate, term } = {}) => {
     const fmt = (n) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
     return {
-        content: [{ type: 'text', text: `On a ${fmt(home_value)} home with ${down_payment}% down at ${rate}% over ${term} years, the estimated monthly payment is ${fmt(estimated_monthly_payment)}, with ${fmt(total_interest)} in total interest over the life of the loan.` }],
+        content: [{ type: 'text', text: `On a ${fmt(home_value)} home with ${effectiveDownPayment}% down at ${rate}% over ${numericTerm} years, the estimated monthly payment is ${fmt(estimated_monthly_payment)}, with ${fmt(total_interest)} in total interest over the life of the loan.` }],
         // structuredContent — flat computed result matching outputSchema (widget reads keys directly, no wrapper)
         structuredContent: { estimated_monthly_payment, total_interest }
     };

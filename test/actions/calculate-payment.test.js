@@ -45,13 +45,27 @@ describe('calculate_payment handler', () => {
         expect(out.structuredContent.total_interest).toBeCloseTo(0, 0);
     });
 
-    test('accepts only supported numeric terms', async () => {
+    test('accepts supported string terms and rejects unsupported terms', async () => {
+        const stringTerm = await handler({ home_value: 450000, down_payment: 20, rate: 6.2, term: '30' });
+        const unsupportedTerm = await handler({ home_value: 450000, down_payment: 20, rate: 6.2, term: '25' });
+
+        expect(stringTerm.structuredContent.estimated_monthly_payment).toBeGreaterThan(0);
+        expect(unsupportedTerm.content[0].text).toMatch(/term/i);
+        expect(unsupportedTerm.structuredContent).toEqual({});
+    });
+
+    test('rejects non-schema term representations', async () => {
         const stringTerm = await handler({ home_value: 450000, down_payment: 20, rate: 6.2, term: '30' });
         const unsupportedTerm = await handler({ home_value: 450000, down_payment: 20, rate: 6.2, term: 25 });
 
-        expect(stringTerm.content[0].text).toMatch(/term/i);
+        expect(stringTerm.structuredContent.estimated_monthly_payment).toBeGreaterThan(0);
         expect(unsupportedTerm.content[0].text).toMatch(/term/i);
-        expect(stringTerm.structuredContent).toEqual({});
         expect(unsupportedTerm.structuredContent).toEqual({});
+    });
+
+    test('accepts the schema field name deposit', async () => {
+        const out = await handler({ home_value: 450000, deposit: 20, rate: 6.2, term: 30 });
+
+        expect(out.structuredContent.estimated_monthly_payment).toBeGreaterThan(0);
     });
 });
